@@ -1,136 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>AllPlay HQ</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AllPlay Chat</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <header>
-        <h1>🎮 AllPlay Team Hub</h1>
-        <div id="user-info">
-            <span><strong>Your ID:</strong> <code id="user-id"></code></span>
-            <button onclick="copyID()">📋 Copy</button>
-        </div>
-        <nav>
-            <button onclick="showTab('chat')">Chat</button>
-            <button onclick="showTab('announcements')">Announcements</button>
-        </nav>
-    </header>
+  <div class="chat-container">
+    <div class="header">
+      <h1>AllPlay Chat</h1>
+      <p id="userIdDisplay"></p>
+    </div>
+    <div class="chat-box" id="chatBox"></div>
+    <input type="text" id="msgInput" placeholder="Type a message or command..." autocomplete="off"/>
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
-    <main>
-        <section id="chat" class="tab active">
-            <h2>💬 Team Chat</h2>
-            <div id="chat-box"></div>
-            <form onsubmit="sendMessage(event)">
-                <input type="text" id="username" placeholder="Name (Optional)">
-                <input type="text" id="message" placeholder="Type a message..." required>
-                <button type="submit">Send</button>
-            </form>
-        </section>
+  <script>
+    const userID = getOrSetUserID();
+    const msgInput = document.getElementById("msgInput");
+    const chatBox = document.getElementById("chatBox");
+    const userIdDisplay = document.getElementById("userIdDisplay");
 
-        <section id="announcements" class="tab">
-            <h2>📢 Announcements</h2>
-            <ul id="announcement-list"></ul>
-            <form onsubmit="postAnnouncement(event)">
-                <input type="text" id="announcement" placeholder="Write announcement..." required>
-                <button type="submit">Post</button>
-            </form>
-        </section>
-    </main>
+    function getOrSetUserID() {
+      let id = localStorage.getItem("userID");
+      if (!id) {
+        id = "user-" + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("userID", id);
+      }
+      return id;
+    }
 
-    <script>
-        let userID = localStorage.getItem("allplay_user_id");
-        if (!userID) {
-            userID = "user-" + Math.random().toString(36).substring(2, 10);
-            localStorage.setItem("allplay_user_id", userID);
-        }
-        document.getElementById("user-id").textContent = userID;
+    function getMuteList() {
+      return JSON.parse(localStorage.getItem("muted_users") || "{}");
+    }
 
-        function copyID() {
-            navigator.clipboard.writeText(userID);
-            alert("User ID copied!");
-        }
+    function saveMuteList(mutes) {
+      localStorage.setItem("muted_users", JSON.stringify(mutes));
+    }
 
-        function copyOtherID(id) {
-            navigator.clipboard.writeText(id);
-            alert("Copied: " + id);
-        }
+    function isMuted(uid) {
+      const mutes = getMuteList();
+      if (!mutes[uid]) return false;
+      return Date.now() < mutes[uid];
+    }
 
-        function showTab(tabId) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-        }
+    function sendMessage() {
+      const msg = msgInput.value.trim();
 
-        let mutedUsers = JSON.parse(localStorage.getItem("muted_users") || "[]");
+      if (!msg) return;
 
-        function loadChat() {
-            const chat = JSON.parse(localStorage.getItem("chat")) || [];
-            const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = '';
+      // Mute Command
+      if (userID === "user-vfspuhk0" && msg.startsWith("/mute ")) {
+        const parts = msg.split(" ");
+        const targetID = parts[1];
+        const minutes = parseInt(parts[2]) || null;
 
-            chat.forEach(m => {
-                if (!mutedUsers.includes(m.userID)) {
-                    const p = document.createElement("p");
-                    p.innerHTML = `<strong>${m.user}</strong> (${m.userID}) 
-                        <button onclick="copyOtherID('${m.userID}')">📋</button>: ${m.msg}`;
-                    chatBox.appendChild(p);
-                }
-            });
+        if (!targetID) {
+          alert("Invalid command: use /mute [user-id] [optional minutes]");
+          msgInput.value = "";
+          return;
         }
 
-        function sendMessage(event) {
-            event.preventDefault();
-            const nameInput = document.getElementById("username");
-            const msgInput = document.getElementById("message");
-            const name = nameInput.value.trim() || userID;
-            const msg = msgInput.value.trim();
-            if (!msg) return;
-
-            // Check for mute command
-            if (userID === "user-vfspuhk0" && msg.startsWith("/mute ")) {
-                const targetID = msg.split(" ")[1];
-                if (targetID && !mutedUsers.includes(targetID)) {
-                    mutedUsers.push(targetID);
-                    localStorage.setItem("muted_users", JSON.stringify(mutedUsers));
-                    alert(`User ${targetID} muted.`);
-                }
-                msgInput.value = "";
-                loadChat();
-                return;
-            }
-
-            const chat = JSON.parse(localStorage.getItem("chat")) || [];
-            chat.push({ user: name, msg, userID });
-            localStorage.setItem("chat", JSON.stringify(chat));
-
-            msgInput.value = "";
-            loadChat();
+        if (targetID === userID) {
+          alert("You can't mute yourself, bro. That's illegal 💀");
+          msgInput.value = "";
+          return;
         }
 
-        function postAnnouncement(event) {
-            event.preventDefault();
-            const annInput = document.getElementById("announcement");
-            const ann = annInput.value.trim();
-            if (!ann) return;
+        const mutes = getMuteList();
+        const until = minutes
+          ? Date.now() + minutes * 60000
+          : Date.now() + 999 * 365 * 24 * 60 * 60000;
 
-            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
-            announcements.push(ann);
-            localStorage.setItem("announcements", JSON.stringify(announcements));
-
-            annInput.value = "";
-            loadAnnouncements();
-        }
-
-        function loadAnnouncements() {
-            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
-            const list = document.getElementById("announcement-list");
-            list.innerHTML = announcements.map(a => `<li>📢 ${a}</li>`).join('');
-        }
-
-        // Load on start
+        mutes[targetID] = until;
+        saveMuteList(mutes);
+        alert(`Muted ${targetID} for ${minutes ? minutes + " minutes" : "a long time"}!`);
+        msgInput.value = "";
         loadChat();
-        loadAnnouncements();
-    </script>
+        return;
+      }
+
+      // Unmute Command
+      if (userID === "user-vfspuhk0" && msg.startsWith("/unmute ")) {
+        const parts = msg.split(" ");
+        const targetID = parts[1];
+        const mutes = getMuteList();
+        if (mutes[targetID]) {
+          delete mutes[targetID];
+          saveMuteList(mutes);
+          alert(`Unmuted ${targetID}`);
+          loadChat();
+        }
+        msgInput.value = "";
+        return;
+      }
+
+      const data = {
+        user: userID,
+        text: msg,
+        time: Date.now()
+      };
+
+      let messages = JSON.parse(localStorage.getItem("chat") || "[]");
+      messages.push(data);
+      localStorage.setItem("chat", JSON.stringify(messages));
+      msgInput.value = "";
+      loadChat();
+    }
+
+    function loadChat() {
+      const messages = JSON.parse(localStorage.getItem("chat") || "[]");
+      chatBox.innerHTML = "";
+
+      messages.forEach(msg => {
+        if (isMuted(msg.user)) return;
+        const div = document.createElement("div");
+        div.className = "msg";
+        div.innerHTML = `<strong>${msg.user}</strong>:
+          ${msg.text}
+          <button onclick="copyID('${msg.user}')">📋</button>`;
+        chatBox.appendChild(div);
+      });
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function copyID(id) {
+      navigator.clipboard.writeText(id).then(() => {
+        alert("Copied ID: " + id);
+      });
+    }
+
+    // Show user ID
+    userIdDisplay.innerHTML = `Your ID: <code>${userID}</code> <button onclick="copyID('${userID}')">📋</button>`;
+
+    loadChat();
+    setInterval(loadChat, 2000); // auto-refresh every 2 sec
+  </script>
 </body>
 </html>
