@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AllPlay HQ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🎮 AllPlay Team Hub</h1>
+        <nav>
+            <button onclick="showTab('chat')">Chat</button>
+            <button onclick="showTab('announcements')">Announcements</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="chat" class="tab active">
+            <h2>💬 Team Chat</h2>
+            <div id="chat-box"></div>
+            <form onsubmit="sendMessage(event)">
+                <input type="text" id="username" placeholder="Name" required>
+                <input type="text" id="message" placeholder="Type a message..." required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
+
+        <section id="announcements" class="tab">
+            <h2>📢 Announcements</h2>
+            <ul id="announcement-list">
+                <li>🚀 New project milestone reached!</li>
+                <li>📆 Next meeting: Friday @ 5PM</li>
+            </ul>
+            <form onsubmit="postAnnouncement(event)">
+                <input type="text" id="announcement" placeholder="Write announcement..." required>
+                <button type="submit">Post</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const user = document.getElementById("username").value;
+            const msg = document.getElementById("message").value;
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `<p><strong>${user}</strong>: ${msg}</p>`;
+            document.getElementById("message").value = "";
+        }
+
+        function postAnnouncement(event) {
+            event.preventDefault();
+            const ann = document.getElementById("announcement").value;
+            const annList = document.getElementById("announcement-list");
+            const item = document.createElement("li");
+            item.textContent = "📢 " + ann;
+            annList.appendChild(item);
+            document.getElementById("announcement").value = "";
+        }
+    </script>
+</body>
+</html>
