@@ -8,6 +8,10 @@
 <body>
     <header>
         <h1>🎮 AllPlay Team Hub</h1>
+        <div id="user-info">
+            <span><strong>Your ID:</strong> <code id="user-id"></code></span>
+            <button onclick="copyID()">📋 Copy</button>
+        </div>
         <nav>
             <button onclick="showTab('chat')">Chat</button>
             <button onclick="showTab('announcements')">Announcements</button>
@@ -19,7 +23,7 @@
             <h2>💬 Team Chat</h2>
             <div id="chat-box"></div>
             <form onsubmit="sendMessage(event)">
-                <input type="text" id="username" placeholder="Name" required>
+                <input type="text" id="username" placeholder="Name (Optional)">
                 <input type="text" id="message" placeholder="Type a message..." required>
                 <button type="submit">Send</button>
             </form>
@@ -27,10 +31,7 @@
 
         <section id="announcements" class="tab">
             <h2>📢 Announcements</h2>
-            <ul id="announcement-list">
-                <li>🚀 New project milestone reached!</li>
-                <li>📆 Next meeting: Friday @ 5PM</li>
-            </ul>
+            <ul id="announcement-list"></ul>
             <form onsubmit="postAnnouncement(event)">
                 <input type="text" id="announcement" placeholder="Write announcement..." required>
                 <button type="submit">Post</button>
@@ -39,29 +40,74 @@
     </main>
 
     <script>
+        // Generate or retrieve persistent ID
+        let userID = localStorage.getItem("allplay_user_id");
+        if (!userID) {
+            userID = "user-" + Math.random().toString(36).substring(2, 10);
+            localStorage.setItem("allplay_user_id", userID);
+        }
+        document.getElementById("user-id").textContent = userID;
+
+        // Copy user ID
+        function copyID() {
+            navigator.clipboard.writeText(userID);
+            alert("User ID copied!");
+        }
+
+        // Tab switcher
         function showTab(tabId) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
         }
 
-        function sendMessage(event) {
-            event.preventDefault();
-            const user = document.getElementById("username").value;
-            const msg = document.getElementById("message").value;
+        // Load messages from localStorage
+        function loadChat() {
+            const chat = JSON.parse(localStorage.getItem("chat")) || [];
             const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += `<p><strong>${user}</strong>: ${msg}</p>`;
-            document.getElementById("message").value = "";
+            chatBox.innerHTML = chat.map(m => `<p><strong>${m.user}</strong>: ${m.msg}</p>`).join('');
         }
 
+        function loadAnnouncements() {
+            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
+            const list = document.getElementById("announcement-list");
+            list.innerHTML = announcements.map(a => `<li>📢 ${a}</li>`).join('');
+        }
+
+        // Send a message
+        function sendMessage(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById("username");
+            const msgInput = document.getElementById("message");
+            const name = nameInput.value.trim() || userID;
+            const msg = msgInput.value.trim();
+            if (!msg) return;
+
+            const chat = JSON.parse(localStorage.getItem("chat")) || [];
+            chat.push({ user: name, msg });
+            localStorage.setItem("chat", JSON.stringify(chat));
+
+            msgInput.value = "";
+            loadChat();
+        }
+
+        // Post announcement
         function postAnnouncement(event) {
             event.preventDefault();
-            const ann = document.getElementById("announcement").value;
-            const annList = document.getElementById("announcement-list");
-            const item = document.createElement("li");
-            item.textContent = "📢 " + ann;
-            annList.appendChild(item);
-            document.getElementById("announcement").value = "";
+            const annInput = document.getElementById("announcement");
+            const ann = annInput.value.trim();
+            if (!ann) return;
+
+            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
+            announcements.push(ann);
+            localStorage.setItem("announcements", JSON.stringify(announcements));
+
+            annInput.value = "";
+            loadAnnouncements();
         }
+
+        // Load on start
+        loadChat();
+        loadAnnouncements();
     </script>
 </body>
 </html>
