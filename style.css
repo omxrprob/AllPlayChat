@@ -10,6 +10,7 @@ header {
     padding: 20px;
     text-align: center;
     border-bottom: 2px solid #444;
+    position: relative;
 }
 
 header h1 {
@@ -18,8 +19,28 @@ header h1 {
     color: #00ffa1;
 }
 
+#user-info {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+#user-info button {
+    margin-left: 10px;
+    padding: 4px 10px;
+    background-color: #00ffa1;
+    color: black;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+nav {
+    margin-top: 10px;
+}
+
 nav button {
-    margin: 10px;
+    margin: 5px;
     padding: 10px 15px;
     border: none;
     background: #00ffa1;
@@ -44,7 +65,7 @@ main {
 #chat-box {
     background: #1a1a1a;
     padding: 10px;
-    height: 200px;
+    height: 250px;
     overflow-y: scroll;
     border: 1px solid #333;
     margin-bottom: 10px;
@@ -52,9 +73,13 @@ main {
 
 form input {
     padding: 8px;
-    margin: 5px;
+    margin: 5px 0;
     border: none;
     border-radius: 3px;
+    width: calc(100% - 20px);
+    display: block;
+    background: #222;
+    color: #f0f0f0;
 }
 
 form button {
@@ -65,6 +90,7 @@ form button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    margin-top: 5px;
 }
 
 ul {
