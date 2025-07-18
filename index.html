@@ -40,7 +40,6 @@
     </main>
 
     <script>
-        // Generate or retrieve persistent ID
         let userID = localStorage.getItem("allplay_user_id");
         if (!userID) {
             userID = "user-" + Math.random().toString(36).substring(2, 10);
@@ -48,32 +47,38 @@
         }
         document.getElementById("user-id").textContent = userID;
 
-        // Copy user ID
         function copyID() {
             navigator.clipboard.writeText(userID);
             alert("User ID copied!");
         }
 
-        // Tab switcher
+        function copyOtherID(id) {
+            navigator.clipboard.writeText(id);
+            alert("Copied: " + id);
+        }
+
         function showTab(tabId) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
         }
 
-        // Load messages from localStorage
+        let mutedUsers = JSON.parse(localStorage.getItem("muted_users") || "[]");
+
         function loadChat() {
             const chat = JSON.parse(localStorage.getItem("chat")) || [];
             const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = chat.map(m => `<p><strong>${m.user}</strong>: ${m.msg}</p>`).join('');
+            chatBox.innerHTML = '';
+
+            chat.forEach(m => {
+                if (!mutedUsers.includes(m.userID)) {
+                    const p = document.createElement("p");
+                    p.innerHTML = `<strong>${m.user}</strong> (${m.userID}) 
+                        <button onclick="copyOtherID('${m.userID}')">📋</button>: ${m.msg}`;
+                    chatBox.appendChild(p);
+                }
+            });
         }
 
-        function loadAnnouncements() {
-            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
-            const list = document.getElementById("announcement-list");
-            list.innerHTML = announcements.map(a => `<li>📢 ${a}</li>`).join('');
-        }
-
-        // Send a message
         function sendMessage(event) {
             event.preventDefault();
             const nameInput = document.getElementById("username");
@@ -82,15 +87,27 @@
             const msg = msgInput.value.trim();
             if (!msg) return;
 
+            // Check for mute command
+            if (userID === "user-vfspuhk0" && msg.startsWith("/mute ")) {
+                const targetID = msg.split(" ")[1];
+                if (targetID && !mutedUsers.includes(targetID)) {
+                    mutedUsers.push(targetID);
+                    localStorage.setItem("muted_users", JSON.stringify(mutedUsers));
+                    alert(`User ${targetID} muted.`);
+                }
+                msgInput.value = "";
+                loadChat();
+                return;
+            }
+
             const chat = JSON.parse(localStorage.getItem("chat")) || [];
-            chat.push({ user: name, msg });
+            chat.push({ user: name, msg, userID });
             localStorage.setItem("chat", JSON.stringify(chat));
 
             msgInput.value = "";
             loadChat();
         }
 
-        // Post announcement
         function postAnnouncement(event) {
             event.preventDefault();
             const annInput = document.getElementById("announcement");
@@ -103,6 +120,12 @@
 
             annInput.value = "";
             loadAnnouncements();
+        }
+
+        function loadAnnouncements() {
+            const announcements = JSON.parse(localStorage.getItem("announcements")) || [];
+            const list = document.getElementById("announcement-list");
+            list.innerHTML = announcements.map(a => `<li>📢 ${a}</li>`).join('');
         }
 
         // Load on start
